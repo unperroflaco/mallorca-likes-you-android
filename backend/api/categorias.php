@@ -1,12 +1,32 @@
 <?php
-require_once __DIR__ . '/../respuesta.php';
+require_once __DIR__ . '/common.php';
 
-$categories = array(
-    array('id' => 'playas', 'name' => 'Playas', 'icon' => '🏖️'),
-    array('id' => 'mercadillos', 'name' => 'Mercadillos', 'icon' => '🧺'),
-    array('id' => 'pueblos', 'name' => 'Pueblos', 'icon' => '🏘️'),
-    array('id' => 'lugares', 'name' => 'Lugares', 'icon' => '📍'),
-    array('id' => 'imprescindibles', 'name' => 'Imprescindibles', 'icon' => '⭐')
+mly_auth();
+$db = mly_db();
+
+$result = $db->query("SELECT DISTINCT categoria FROM tbmallorcabot WHERE categoria <> '' ORDER BY categoria");
+if (!$result) mly_json(array('ok' => false, 'error' => 'query_failed'), 500);
+
+$categories = array();
+while ($row = $result->fetch_assoc()) {
+    $categories[] = $row['categoria'];
+}
+
+$subcategories = array(
+    'Puesta de sol',
+    'Amanecer',
+    'Pa amb oli',
+    'Platos típicos',
+    'Copa',
+    'Niños',
+    'Hoteles',
+    'Experiencias',
+    'Restaurantes',
+    'Horno/panadería'
 );
 
-mly_json(array('ok' => true, 'data' => $categories));
+mly_json(array(
+    'ok' => true,
+    'categorias' => $categories,
+    'subcategorias_imprescindibles' => $subcategories
+));
