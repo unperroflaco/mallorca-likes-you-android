@@ -81,7 +81,7 @@ class MainActivity : Activity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == LOCATION_PERMISSION_REQUEST) {
             val granted = grantResults.any { it == PackageManager.PERMISSION_GRANTED }
-            pendingGeoCallback?.invoke(pendingGeoOrigin, granted, false)
+            pendingGeoOrigin?.let { origin -> pendingGeoCallback?.invoke(origin, granted, false) }
             pendingGeoCallback = null
             pendingGeoOrigin = null
         }
