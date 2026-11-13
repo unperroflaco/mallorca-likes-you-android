@@ -37,6 +37,13 @@
       </div>
     </section>
     <section class="category-grid" id="categories"></section>
+    <p class="selection-hint" id="selection-hint">Selecciona una o varias categorías.</p>
+    <button class="primary-button search-button" id="search-button">Buscar lugares cercanos</button>
+
+    <section class="results-section" id="results-section" hidden>
+      <div class="section-heading"><div><p class="eyebrow">CERCA DE TI</p><h2 id="results-title">Resultados</h2></div></div>
+      <div id="results" class="results-list"></div>
+    </section>
 
     <section class="info-panel">
       <h2>Una isla, muchas formas de vivirla</h2>
@@ -75,6 +82,16 @@
         <button class="primary-button" id="save-origin">Confirmar ubicación</button>
       </div>
       <p class="small-note" id="map-status">La ubicación elegida se guardará solo en este dispositivo.</p>
+    </div>
+  </section>
+
+  <section class="modal" id="detail-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-heading">
+        <div><p class="eyebrow">DESCUBRE ESTE LUGAR</p><h2 id="detail-title">Lugar</h2></div>
+        <button class="icon-button" id="close-detail" aria-label="Cerrar">×</button>
+      </div>
+      <div id="detail-content"></div>
     </div>
   </section>
 
