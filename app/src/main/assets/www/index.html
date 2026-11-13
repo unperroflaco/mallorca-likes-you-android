@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d5960">
+  <title>Mallorca Likes You</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-mark">MLY</div>
+    <div>
+      <div class="brand-title">Mallorca Likes You</div>
+      <div class="brand-subtitle" id="welcome-location">Descubre Mallorca a tu manera</div>
+    </div>
+    <button class="icon-button" id="menu-button" aria-label="Abrir menú">☰</button>
+  </header>
+
+  <main>
+    <section class="welcome-card">
+      <p class="eyebrow">LA ISLA TE ESPERA</p>
+      <h1>Descubre tu Mallorca</h1>
+      <p id="weather-summary">Estamos preparando tu próxima escapada.</p>
+      <div class="origin-line">
+        <span>Tu punto de búsqueda:</span>
+        <strong id="origin-label">Selecciona una ubicación</strong>
+      </div>
+      <button class="primary-button" id="choose-origin">Elegir punto de origen</button>
+    </section>
+
+    <section class="section-heading">
+      <div>
+        <p class="eyebrow">EXPLORA</p>
+        <h2>¿Qué te apetece descubrir?</h2>
+      </div>
+    </section>
+    <section class="category-grid" id="categories"></section>
+
+    <section class="info-panel">
+      <h2>Una isla, muchas formas de vivirla</h2>
+      <p>Playas, pueblos, mercados, rincones especiales y experiencias para disfrutar Mallorca.</p>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navegación principal">
+    <button class="nav-item active" data-page="home"><span>⌂</span>Inicio</button>
+    <button class="nav-item" data-page="map"><span>⌖</span>Mapa</button>
+    <button class="nav-item" data-page="saved"><span>♡</span>Guardados</button>
+  </nav>
+
+  <div class="drawer-backdrop" id="drawer-backdrop"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <strong>Menú</strong>
+      <button class="icon-button" id="close-menu" aria-label="Cerrar menú">×</button>
+    </div>
+    <button class="drawer-option" id="menu-origin">Cambiar punto de origen</button>
+    <button class="drawer-option" id="menu-language">Idioma: Español</button>
+    <button class="drawer-option" id="menu-legal">Aviso legal y agradecimientos</button>
+    <p class="drawer-foot">Mallorca Likes You · 1.0.0</p>
+  </aside>
+
+  <section class="modal" id="origin-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-heading">
+        <div><p class="eyebrow">PERSONALIZA TU BÚSQUEDA</p><h2>Elige tu punto de origen</h2></div>
+        <button class="icon-button" id="close-origin" aria-label="Cerrar">×</button>
+      </div>
+      <p class="muted">Arrastra el marcador o pulsa sobre el mapa para elegir desde dónde buscar.</p>
+      <div id="origin-map"></div>
+      <div class="origin-actions">
+        <button class="secondary-button" id="use-gps">Usar mi ubicación</button>
+        <button class="primary-button" id="save-origin">Confirmar ubicación</button>
+      </div>
+      <p class="small-note" id="map-status">La ubicación elegida se guardará solo en este dispositivo.</p>
+    </div>
+  </section>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
