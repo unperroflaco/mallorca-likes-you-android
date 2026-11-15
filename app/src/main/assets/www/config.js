@@ -8,6 +8,6 @@
  */
 window.MLY_CONFIG = {
   API_BASE: "https://mallorca.likesyou.org/backend/api/",
- API_TOKEN: "CAMBIAR_POR_EL_MISMO_TOKEN_DEL_SERVIDOR"
+ API_TOKEN: "esternocleidomastoideo"
 
 };
