@@ -3,6 +3,21 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../respuesta.php';
 
+// La aplicación se ejecuta dentro de un WebView con origen file:// (Origin: null).
+// Se permite CORS sin cookies; la autenticación sigue exigiendo el token Bearer.
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Headers: Authorization, Content-Type, Accept');
+header('Access-Control-Max-Age: 86400');
+header('Vary: Origin');
+
+// El navegador envía OPTIONS antes del GET porque Authorization es una cabecera no simple.
+// Debe responderse antes de comprobar el token.
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
+
 function mly_config(): array
 {
     static $config = null;
@@ -38,7 +53,7 @@ function mly_auth(): void
     $provided = '';
     if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
         $header = trim($_SERVER['HTTP_AUTHORIZATION']);
-        if (preg_match('/^Bearer\s+(.+)$/i', $header, $m)) $provided = trim($m[1]);
+        if (preg_match('/^Bearer\\s+(.+)$/i', $header, $m)) $provided = trim($m[1]);
     }
     if ($expected === '' || $provided === '' || !hash_equals($expected, $provided)) {
         mly_json(array('ok' => false, 'error' => 'unauthorized'), 401);
@@ -78,7 +93,7 @@ function mly_photos(?string $raw, ?string $defaultAuthor): array
         if ($author === '') $author = 'Paco Gómez 2025';
         $photos[] = array(
             'nombre' => $name,
-            'url' => preg_match('/^https?:\/\//i', $name) ? $name : $base . ltrim($name, '/'),
+            'url' => preg_match('/^https?:\\/\\//i', $name) ? $name : $base . ltrim($name, '/'),
             'autor' => $author
         );
     }
