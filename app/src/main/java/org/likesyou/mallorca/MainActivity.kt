@@ -21,6 +21,7 @@ class MainActivity : Activity() {
     private lateinit var webView: WebView
     private lateinit var assetLoader: WebViewAssetLoader
     private val networkExecutor = Executors.newSingleThreadExecutor()
+    private lateinit var apiUserAgent: String
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
     private var pendingGeoOrigin: String? = null
 
@@ -38,6 +39,7 @@ class MainActivity : Activity() {
         webView.settings.setGeolocationEnabled(true)
         webView.settings.allowFileAccess = false
         webView.settings.allowContentAccess = true
+        apiUserAgent = webView.settings.userAgentString
 
         // La API se consulta desde Android, sin depender de CORS del WebView.
         webView.addJavascriptInterface(AndroidApiBridge(), "MLYAndroid")
@@ -108,8 +110,10 @@ class MainActivity : Activity() {
                         requestMethod = "GET"
                         connectTimeout = 15000
                         readTimeout = 20000
-                        instanceFollowRedirects = false
+                        instanceFollowRedirects = true
                         setRequestProperty("Accept", "application/json")
+                        setRequestProperty("User-Agent", apiUserAgent)
+                        setRequestProperty("Referer", "https://mallorca.likesyou.org/")
                         setRequestProperty("Cache-Control", "no-cache")
                     }
                     status = connection.responseCode
