@@ -57,12 +57,43 @@
     if (!API.API_BASE || API.API_BASE.indexOf("TU-DOMINIO") >= 0) {
       throw new Error("Falta configurar API_BASE en config.js.");
     }
-    // GET sencillo sin cabeceras personalizadas: no requiere preflight CORS.
-    const response = await fetch(apiUrl(endpoint, params), {
-      method: "GET"
-    });
-    const data = await response.json();
-    if (!response.ok || !data.ok) throw new Error(data.message || data.error || "Error consultando el servicio.");
+
+    const url = apiUrl(endpoint, params);
+    let response;
+    try {
+      // GET sencillo sin cabeceras personalizadas: no requiere preflight CORS.
+      response = await fetch(url, {
+        method: "GET",
+        cache: "no-store"
+      });
+    } catch (error) {
+      // Información visible para distinguir CORS, bloqueo del alojamiento y conectividad.
+      throw new Error(
+        "No se pudo completar la petición.\n" +
+        "URL: " + url + "\n" +
+        "Origen WebView: " + window.location.origin + "\n" +
+        "Conexión: " + (navigator.onLine ? "online" : "offline") + "\n" +
+        "Detalle: " + (error && error.message ? error.message : String(error))
+      );
+    }
+
+    const body = await response.text();
+    let data;
+    try {
+      data = JSON.parse(body);
+    } catch (_) {
+      throw new Error(
+        "La API no ha devuelto JSON. HTTP " + response.status + "\n" +
+        "URL: " + url + "\n" +
+        "Respuesta: " + body.substring(0, 350)
+      );
+    }
+    if (!response.ok || !data.ok) {
+      throw new Error(
+        "Error API (HTTP " + response.status + "): " +
+        (data.message || data.error || "respuesta no válida")
+      );
+    }
     return data;
   }
   function toast(message) {
