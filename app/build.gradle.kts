@@ -37,4 +37,10 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    // WebViewAssetLoader sirve los recursos locales con un origen HTTPS seguro.
+}
+
+dependencies {
+    implementation("androidx.webkit:webkit:1.12.1")
 }
