@@ -3,27 +3,30 @@ package org.likesyou.mallorca
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
 import android.webkit.GeolocationPermissions
+import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.webkit.WebViewAssetLoader
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.concurrent.Executors
 
 class MainActivity : Activity() {
     private lateinit var webView: WebView
     private lateinit var assetLoader: WebViewAssetLoader
+    private val networkExecutor = Executors.newSingleThreadExecutor()
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
     private var pendingGeoOrigin: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Sirve los HTML, CSS y JS locales bajo un origen HTTPS en vez de file://.
-        // Así fetch() puede comunicarse con la API remota respetando CORS.
         assetLoader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
             .build()
@@ -35,6 +38,9 @@ class MainActivity : Activity() {
         webView.settings.setGeolocationEnabled(true)
         webView.settings.allowFileAccess = false
         webView.settings.allowContentAccess = true
+
+        // La API se consulta desde Android, sin depender de CORS del WebView.
+        webView.addJavascriptInterface(AndroidApiBridge(), "MLYAndroid")
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(
@@ -80,9 +86,63 @@ class MainActivity : Activity() {
         }
     }
 
+    private inner class AndroidApiBridge {
+        @JavascriptInterface
+        fun get(rawUrl: String, requestId: Int) {
+            networkExecutor.execute {
+                var status = 0
+                var body = ""
+                var error = ""
+                var connection: HttpURLConnection? = null
+                try {
+                    val url = URL(rawUrl)
+                    if (url.protocol != "https" ||
+                        url.host != "mallorca.likesyou.org" ||
+                        !(url.path.startsWith("/backend/api/")) ||
+                        (url.port != -1 && url.port != 443)
+                    ) {
+                        throw SecurityException("URL no permitida para la API.")
+                    }
+
+                    connection = (url.openConnection() as HttpURLConnection).apply {
+                        requestMethod = "GET"
+                        connectTimeout = 15000
+                        readTimeout = 20000
+                        instanceFollowRedirects = false
+                        setRequestProperty("Accept", "application/json")
+                        setRequestProperty("Cache-Control", "no-cache")
+                    }
+                    status = connection.responseCode
+                    val stream = if (status >= 400) connection.errorStream else connection.inputStream
+                    body = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() } ?: ""
+                } catch (exception: Exception) {
+                    error = exception.message ?: exception.javaClass.simpleName
+                } finally {
+                    connection?.disconnect()
+                }
+
+                val safeBody = JSONObject.quote(body)
+                val safeError = JSONObject.quote(error)
+                val script = "window.MLYNativeApi && window.MLYNativeApi._complete(" +
+                    requestId + "," + status + "," + safeBody + "," + safeError + ");"
+                runOnUiThread {
+                    if (this@MainActivity::webView.isInitialized) {
+                        webView.evaluateJavascript(script, null)
+                    }
+                }
+            }
+        }
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         webView.saveState(outState)
         super.onSaveInstanceState(outState)
+    }
+
+    override fun onDestroy() {
+        networkExecutor.shutdownNow()
+        if (this::webView.isInitialized) webView.removeJavascriptInterface("MLYAndroid")
+        super.onDestroy()
     }
 
     override fun onBackPressed() {
