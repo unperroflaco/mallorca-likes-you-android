@@ -53,44 +53,66 @@
     });
     return url.toString();
   }
+  const nativeRequests = new Map();
+  let nativeRequestSequence = 0;
+
+  // Android devuelve aquí el resultado de las peticiones HTTP nativas.
+  window.MLYNativeApi = {
+    _complete: function (requestId, status, body, error) {
+      const pending = nativeRequests.get(requestId);
+      if (!pending) return;
+      nativeRequests.delete(requestId);
+      if (error) pending.reject(new Error("Conexión Android: " + error));
+      else pending.resolve({ status: status, body: body });
+    }
+  };
+
+  function nativeGet(url) {
+    return new Promise((resolve, reject) => {
+      const requestId = ++nativeRequestSequence;
+      nativeRequests.set(requestId, { resolve: resolve, reject: reject });
+      try {
+        window.MLYAndroid.get(url, requestId);
+      } catch (error) {
+        nativeRequests.delete(requestId);
+        reject(error);
+      }
+    });
+  }
+
   async function apiGet(endpoint, params) {
     if (!API.API_BASE || API.API_BASE.indexOf("TU-DOMINIO") >= 0) {
       throw new Error("Falta configurar API_BASE en config.js.");
     }
 
     const url = apiUrl(endpoint, params);
-    let response;
-    try {
-      // GET sencillo sin cabeceras personalizadas: no requiere preflight CORS.
-      response = await fetch(url, {
-        method: "GET",
-        cache: "no-store"
-      });
-    } catch (error) {
-      // Información visible para distinguir CORS, bloqueo del alojamiento y conectividad.
-      throw new Error(
-        "No se pudo completar la petición.\n" +
-        "URL: " + url + "\n" +
-        "Origen WebView: " + window.location.origin + "\n" +
-        "Conexión: " + (navigator.onLine ? "online" : "offline") + "\n" +
-        "Detalle: " + (error && error.message ? error.message : String(error))
-      );
+    let status;
+    let body;
+
+    if (window.MLYAndroid && typeof window.MLYAndroid.get === "function") {
+      const result = await nativeGet(url);
+      status = result.status;
+      body = result.body;
+    } else {
+      // Permite seguir probando la versión web fuera de la aplicación Android.
+      const response = await fetch(url, { method: "GET", cache: "no-store" });
+      status = response.status;
+      body = await response.text();
     }
 
-    const body = await response.text();
     let data;
     try {
       data = JSON.parse(body);
     } catch (_) {
       throw new Error(
-        "La API no ha devuelto JSON. HTTP " + response.status + "\n" +
-        "URL: " + url + "\n" +
-        "Respuesta: " + body.substring(0, 350)
+        "La API no ha devuelto JSON. HTTP " + status + "\\n" +
+        "URL: " + url + "\\n" +
+        "Respuesta: " + String(body).substring(0, 350)
       );
     }
-    if (!response.ok || !data.ok) {
+    if (status < 200 || status >= 300 || !data.ok) {
       throw new Error(
-        "Error API (HTTP " + response.status + "): " +
+        "Error API (HTTP " + status + "): " +
         (data.message || data.error || "respuesta no válida")
       );
     }
