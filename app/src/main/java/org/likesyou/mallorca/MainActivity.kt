@@ -3,28 +3,49 @@ package org.likesyou.mallorca
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.webkit.GeolocationPermissions
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.webkit.WebViewAssetLoader
 
 class MainActivity : Activity() {
     private lateinit var webView: WebView
+    private lateinit var assetLoader: WebViewAssetLoader
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
     private var pendingGeoOrigin: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Sirve los HTML, CSS y JS locales bajo un origen HTTPS en vez de file://.
+        // Así fetch() puede comunicarse con la API remota respetando CORS.
+        assetLoader = WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            .build()
+
         webView = WebView(this)
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
         webView.settings.databaseEnabled = true
         webView.settings.setGeolocationEnabled(true)
-        webView.settings.allowFileAccess = true
+        webView.settings.allowFileAccess = false
         webView.settings.allowContentAccess = true
-        webView.webViewClient = WebViewClient()
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldInterceptRequest(
+                view: WebView,
+                request: WebResourceRequest
+            ): WebResourceResponse? {
+                return assetLoader.shouldInterceptRequest(request.url)
+                    ?: super.shouldInterceptRequest(view, request)
+            }
+        }
+
         webView.webChromeClient = object : WebChromeClient() {
             override fun onGeolocationPermissionsShowPrompt(
                 origin: String,
@@ -53,7 +74,7 @@ class MainActivity : Activity() {
 
         setContentView(webView)
         if (savedInstanceState == null) {
-            webView.loadUrl("file:///android_asset/www/index.html")
+            webView.loadUrl("https://appassets.androidplatform.net/assets/www/index.html")
         } else {
             webView.restoreState(savedInstanceState)
         }
