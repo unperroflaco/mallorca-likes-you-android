@@ -57,15 +57,9 @@
     if (!API.API_BASE || API.API_BASE.indexOf("TU-DOMINIO") >= 0) {
       throw new Error("Falta configurar API_BASE en config.js.");
     }
-    if (!API.API_TOKEN || API.API_TOKEN.indexOf("CAMBIAR_") === 0) {
-      throw new Error("Falta configurar el token de acceso de la API.");
-    }
-    // POST con text/plain es una petición simple CORS: evita el preflight OPTIONS.
-    // El token viaja en el cuerpo, nunca en la URL ni en una cabecera personalizada.
+    // GET sencillo sin cabeceras personalizadas: no requiere preflight CORS.
     const response = await fetch(apiUrl(endpoint, params), {
-      method: "POST",
-      headers: { "Content-Type": "text/plain", "Accept": "application/json" },
-      body: API.API_TOKEN
+      method: "GET"
     });
     const data = await response.json();
     if (!response.ok || !data.ok) throw new Error(data.message || data.error || "Error consultando el servicio.");
