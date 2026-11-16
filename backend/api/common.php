@@ -51,10 +51,19 @@ function mly_auth(): void
     $c = mly_config();
     $expected = (string)($c['api_token'] ?? '');
     $provided = '';
+    // Compatibilidad con clientes antiguos que todavía envían Bearer.
     if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
         $header = trim($_SERVER['HTTP_AUTHORIZATION']);
         if (preg_match('/^Bearer\\s+(.+)$/i', $header, $m)) $provided = trim($m[1]);
     }
+
+    // La app Android nueva envía el token en el cuerpo de un POST text/plain.
+    // Esto evita la cabecera Authorization y, por tanto, el preflight CORS OPTIONS.
+    if ($provided === '' && isset($_SERVER['REQUEST_METHOD']) &&
+        $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $provided = trim((string)file_get_contents('php://input'));
+    }
+
     if ($expected === '' || $provided === '' || !hash_equals($expected, $provided)) {
         mly_json(array('ok' => false, 'error' => 'unauthorized'), 401);
     }
